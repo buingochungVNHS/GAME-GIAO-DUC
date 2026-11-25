@@ -3,276 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Thử âm thanh và micro</title>
-<style>
-  :root { --bg:#14102b; --card:#221b45; --ink:#f5f1ff; --mute:#b9b0e0; --a:#ffb703; --b:#4cc9f0; --c:#80ed99; --bad:#ff6b6b; }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.5 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
-         padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); }
-  main { max-width:640px; margin:0 auto; }
-  h1 { font-size:24px; margin:4px 0 8px; }
-  .card { background:var(--card); border-radius:16px; padding:14px 16px; margin:12px 0; }
-  ol { margin:6px 0 0; padding-left:22px; }
-  li { margin:4px 0; }
-  .tests { display:grid; gap:10px; }
-  button { font:inherit; font-weight:700; border:0; border-radius:14px; padding:16px; color:#14102b; width:100%; text-align:left; cursor:pointer; }
-  button small { display:block; font-weight:500; opacity:.8; }
-  #bA { background:var(--a); } #bB { background:var(--b); } #bC { background:var(--c); }
-  #bStop { background:var(--bad); text-align:center; }
-  .stat { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
-  .stat div { background:#2d2559; border-radius:12px; padding:10px; text-align:center; }
-  .stat b { display:block; font-size:26px; }
-  #verdict { margin-top:10px; font-weight:700; min-height:26px; }
-  #log { font:14px/1.5 ui-monospace,Menlo,monospace; color:var(--mute); max-height:260px; overflow:auto; white-space:pre-wrap; }
-</style>
+<meta name="theme-color" content="#1b1438">
+<title>Game Giáo Dục – Luyện tiếng Anh cùng rồng</title>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<main>
-  <h1>🐉 Thử âm thanh và micro</h1>
-  <div class="card">
-    <b>Cách thử (mỗi bài khoảng 3 phút):</b>
-    <ol>
-      <li>Mở trang này bằng <b>Safari</b> (không mở trong ứng dụng khác).</li>
-      <li>Bật âm lượng, bỏ chế độ im lặng. Bấm <b>một</b> bài thử bên dưới và nghe có tiếng.</li>
-      <li>Bấm nút nguồn để <b>khóa màn hình</b>. Để máy yên 2–3 phút.</li>
-      <li>Ghi nhớ: trong lúc khóa, còn nghe tiếng không? Rồi mở máy, quay lại trang này xem bảng kết quả.</li>
-      <li>Thử lần lượt cả 3 bài, mỗi bài một lần.</li>
-    </ol>
-  </div>
-
-  <div class="tests">
-    <button id="bA">Bài A – Phát âm thanh<small>Tiếng "ting" mỗi 5 giây, phát bằng thẻ audio</small></button>
-    <button id="bB">Bài B – Giọng đọc tiếng Anh<small>Máy đọc "Number 1, 2, 3…" bằng giọng của trình duyệt</small></button>
-    <button id="bC">Bài C – Âm thanh Web Audio<small>Tiếng "ting" mỗi 5 giây, phát bằng bộ hẹn giờ của trang</small></button>
-    <button id="bStop">⏹ Dừng thử</button>
-  </div>
-
-  <div class="card" style="margin-top:18px">
-    <b>Thử micro (làm khi màn hình SÁNG)</b>
-    <ol>
-      <li>Bấm Bài D hoặc Bài E. Nếu trình duyệt hỏi quyền micro, chọn <b>Cho phép</b>.</li>
-      <li>Bài D: nói tiếng Anh, ví dụ "How much is this". Chữ nhận được hiện bên dưới.</li>
-      <li>Bài E: thu 5 giây rồi tự phát lại. Nếu có lỗi, ghi lại dòng lỗi hiện ra.</li>
-    </ol>
-    <div class="tests" style="margin-top:10px">
-      <button id="bD" style="background:#f4a6ff">Bài D – Nhận giọng nói<small>Máy chuyển lời bạn nói thành chữ tiếng Anh</small></button>
-      <button id="bE" style="background:#ffd6a5">Bài E – Thu âm 5 giây<small>Thu giọng bạn rồi phát lại</small></button>
-    </div>
-    <div id="micOut" style="margin-top:12px;font-weight:700;min-height:26px"></div>
-    <audio id="player" controls style="width:100%;margin-top:8px;display:none"></audio>
-  </div>
-
-  <div class="card">
-    <b id="title">Chưa chạy bài nào</b>
-    <div class="stat">
-      <div><b id="real">0</b>giây thực tế</div>
-      <div><b id="beat">0</b>giây trang đếm được</div>
-    </div>
-    <div id="verdict"></div>
-    <div style="color:var(--mute);margin-top:6px;font-size:15px">Nếu "trang đếm được" nhỏ hơn "thực tế" nhiều, trang đã bị tạm dừng khi khóa màn hình.</div>
-  </div>
-
-  <div class="card"><b>Nhật ký</b><div id="log"></div></div>
-</main>
-
-<script>
-(function () {
-  var $ = function (id) { return document.getElementById(id); };
-  var active = null, startMs = 0, hb = 0, plays = 0;
-  var webTimer = null, speakTimer = null, ctx = null;
-  var audio = new Audio();
-  audio.loop = true;
-  audio.preload = 'auto';
-
-  function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function now() { var d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
-  function log(msg) {
-    var el = $('log');
-    el.textContent += now() + '  ' + msg + '\n';
-    var lines = el.textContent.split('\n');
-    if (lines.length > 60) { el.textContent = lines.slice(lines.length - 60).join('\n'); }
-    el.scrollTop = el.scrollHeight;
-  }
-  function realSec() { return active ? Math.round((Date.now() - startMs) / 1000) : 0; }
-  function render() {
-    var r = realSec();
-    $('real').textContent = r;
-    $('beat').textContent = hb;
-    var v = $('verdict');
-    if (!active) { v.textContent = ''; return; }
-    if (r >= 20) {
-      if (hb >= r - 3) { v.textContent = '✅ Trang vẫn chạy bình thường'; v.style.color = '#80ed99'; }
-      else { v.textContent = '⚠️ Trang đã bị tạm dừng ' + (r - hb) + ' giây'; v.style.color = '#ffb703'; }
-    } else { v.textContent = ''; }
-  }
-
-  // Tạo file WAV 20 giây: tiếng "ting" 880 Hz mỗi 5 giây
-  function makeWav() {
-    var sr = 11025, dur = 20, n = sr * dur;
-    var buf = new ArrayBuffer(44 + n * 2), dv = new DataView(buf);
-    function str(o, s) { for (var i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); }
-    str(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
-    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
-    dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
-    str(36, 'data'); dv.setUint32(40, n * 2, true);
-    for (var i = 0; i < n; i++) {
-      var t = i / sr, ph = t % 5, val = 0;
-      if (ph < 0.4) { val = Math.sin(2 * Math.PI * 880 * t) * Math.exp(-ph * 7) * 0.7; }
-      dv.setInt16(44 + i * 2, Math.round(val * 32767), true);
-    }
-    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
-  }
-  var wavUrl = null;
-  try { wavUrl = makeWav(); } catch (e) { log('Không tạo được âm thanh: ' + e.message); }
-
-  function stopAll() {
-    try { audio.pause(); } catch (e) {}
-    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
-    if (webTimer) { clearInterval(webTimer); webTimer = null; }
-    if (speakTimer) { clearTimeout(speakTimer); speakTimer = null; }
-    if (ctx) { try { ctx.suspend(); } catch (e) {} }
-  }
-  function begin(name, label) {
-    stopAll();
-    active = name; startMs = Date.now(); hb = 0; plays = 0;
-    $('title').textContent = label;
-    $('log').textContent = '';
-    log('Bắt đầu ' + label);
-    render();
-  }
-
-  // Bài A
-  $('bA').addEventListener('click', function () {
-    begin('A', 'Bài A – Thẻ audio');
-    if (!wavUrl) { log('Thiếu âm thanh'); return; }
-    audio.src = wavUrl;
-    audio.loop = true;
-    try {
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({ title: 'Thử âm thanh', artist: 'Game Giáo Dục', album: 'Bài A' });
-        navigator.mediaSession.setActionHandler('play', function () { audio.play(); });
-        navigator.mediaSession.setActionHandler('pause', function () { audio.pause(); });
-      }
-    } catch (e) { log('Media Session: ' + e.message); }
-    audio.play().then(function () { log('Đang phát (thẻ audio)'); })
-      .catch(function (e) { log('Lỗi phát: ' + e.message); });
-  });
-  audio.addEventListener('pause', function () { if (active === 'A') log('Âm thanh DỪNG (pause)'); });
-  audio.addEventListener('playing', function () { if (active === 'A') log('Âm thanh đang chạy (playing)'); });
-
-  // Bài B
-  function say() {
-    if (active !== 'B') return;
-    if (!window.speechSynthesis) { log('Trình duyệt không có giọng đọc'); return; }
-    plays++;
-    var u = new SpeechSynthesisUtterance('Test B. Number ' + plays + '.');
-    u.lang = 'en-US';
-    u.onstart = function () { log('Đọc lần ' + plays); };
-    u.onend = function () { if (active === 'B') speakTimer = setTimeout(say, 4000); };
-    u.onerror = function (ev) { log('Lỗi giọng đọc: ' + (ev && ev.error)); };
-    window.speechSynthesis.speak(u);
-  }
-  $('bB').addEventListener('click', function () {
-    begin('B', 'Bài B – Giọng đọc trình duyệt');
-    say();
-  });
-
-  // Bài C
-  function beep() {
-    if (!ctx) return;
-    var o = ctx.createOscillator(), g = ctx.createGain();
-    o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
-    var t = ctx.currentTime;
-    g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
-    o.start(t); o.stop(t + 0.45);
-    plays++;
-    log('Ting lần ' + plays + ' (trạng thái: ' + ctx.state + ')');
-  }
-  $('bC').addEventListener('click', function () {
-    begin('C', 'Bài C – Web Audio');
-    try {
-      if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-      ctx.resume().then(function () { beep(); webTimer = setInterval(beep, 5000); });
-    } catch (e) { log('Lỗi Web Audio: ' + e.message); }
-  });
-
-  $('bStop').addEventListener('click', function () {
-    stopAll();
-    if (active) log('Đã dừng');
-    active = null; render();
-    $('title').textContent = 'Chưa chạy bài nào';
-  });
-
-  // Chẩn đoán môi trường
-  log('Môi trường: https=' + window.isSecureContext +
-      ', trong khung=' + (window.top !== window.self) +
-      ', SpeechRecognition=' + !!(window.SpeechRecognition || window.webkitSpeechRecognition) +
-      ', getUserMedia=' + !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) +
-      ', MediaRecorder=' + !!window.MediaRecorder);
-
-  function micOut(msg, color) { var el = $('micOut'); el.textContent = msg; el.style.color = color || '#f5f1ff'; }
-
-  // Bài D: nhận giọng nói
-  var rec = null;
-  $('bD').addEventListener('click', function () {
-    stopAll(); active = null; render();
-    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { micOut('❌ Trình duyệt này không có chức năng nhận giọng nói', '#ff6b6b'); log('D: không có SpeechRecognition'); return; }
-    try { if (rec) rec.abort(); } catch (e) {}
-    rec = new SR();
-    rec.lang = 'en-US'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
-    var got = false;
-    rec.onstart = function () { log('D: đang nghe, hãy nói tiếng Anh'); micOut('🎤 Đang nghe… hãy nói tiếng Anh'); };
-    rec.onresult = function (ev) {
-      var t = '';
-      for (var i = 0; i < ev.results.length; i++) { t += ev.results[i][0].transcript; }
-      got = true; micOut('📝 ' + t, '#80ed99'); log('D: nhận được "' + t + '"');
-    };
-    rec.onerror = function (ev) { log('D: lỗi ' + ev.error); micOut('❌ Lỗi nhận giọng: ' + ev.error, '#ff6b6b'); };
-    rec.onend = function () {
-      log('D: kết thúc' + (got ? '' : ' (chưa có chữ nào)'));
-      if (!got && $('micOut').textContent.indexOf('Lỗi') < 0) { micOut('⚠️ Kết thúc nhưng chưa nhận được chữ nào', '#ffb703'); }
-    };
-    try { rec.start(); } catch (e) { log('D: không bắt đầu được: ' + e.message); micOut('❌ ' + e.message, '#ff6b6b'); }
-  });
-
-  // Bài E: thu âm 5 giây rồi phát lại
-  $('bE').addEventListener('click', function () {
-    stopAll(); active = null; render();
-    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || !window.MediaRecorder) {
-      micOut('❌ Trình duyệt không hỗ trợ thu âm', '#ff6b6b'); log('E: thiếu getUserMedia hoặc MediaRecorder'); return;
-    }
-    micOut('🎤 Đang xin quyền micro…');
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-      var chunks = [], mr;
-      function release() { stream.getTracks().forEach(function (t) { t.stop(); }); }
-      try { mr = new MediaRecorder(stream); } catch (e) { release(); micOut('❌ ' + e.message, '#ff6b6b'); log('E: ' + e.message); return; }
-      mr.ondataavailable = function (ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
-      mr.onstop = function () {
-        release();
-        var blob = new Blob(chunks, { type: mr.mimeType || 'audio/mp4' });
-        var kb = Math.round(blob.size / 1024);
-        log('E: thu xong ' + kb + ' KB, định dạng ' + (mr.mimeType || '?'));
-        var p = $('player'); p.src = URL.createObjectURL(blob); p.style.display = 'block';
-        p.play().catch(function (e) { log('E: chưa tự phát được, hãy bấm nút phát: ' + e.message); });
-        micOut('✅ Thu được ' + kb + ' KB. Nghe lại bên dưới.', '#80ed99');
-      };
-      mr.start(); log('E: đang thu 5 giây…'); micOut('🔴 Đang thu 5 giây, hãy nói…');
-      setTimeout(function () { try { mr.stop(); } catch (e) {} }, 5000);
-    }).catch(function (e) { log('E: lỗi ' + e.name + ': ' + e.message); micOut('❌ Không dùng được micro: ' + e.name, '#ff6b6b'); });
-  });
-
-  setInterval(function () { if (active) { hb++; render(); } }, 1000);
-
-  document.addEventListener('visibilitychange', function () {
-    if (!active) return;
-    if (document.hidden) { log('Trang bị ẩn / khóa màn hình'); }
-    else {
-      log('Trang hiện lại. Thực tế ' + realSec() + 's, trang đếm ' + hb + 's' + (active === 'A' ? ', audio.paused = ' + audio.paused : ''));
-      render();
-    }
-  });
-})();
-</script>
+<div id="app">
+  <header id="top">
+    <div id="brand">🐉 Game Giáo Dục</div>
+  </header>
+  <main id="screen"></main>
+  <nav id="tabs">
+    <button data-tab="home"><span>🏠</span>Hôm nay</button>
+    <button data-tab="learn"><span>📚</span>Học</button>
+    <button data-tab="speak"><span>🎤</span>Nói</button>
+    <button data-tab="sound"><span>🔤</span>Phiên âm</button>
+    <button data-tab="settings"><span>⚙️</span>Cài đặt</button>
+  </nav>
+  <div id="overlay" hidden></div>
+  <div id="toast" hidden></div>
+</div>
+<script src="js/data.js"></script>
+<script src="js/core.js"></script>
+<script src="js/dragon.js"></script>
+<script src="js/ui.js"></script>
 </body>
 </html>
